@@ -11,7 +11,7 @@ import java.util.Arrays;
 public class SAP {
 
     /* The graph corresponding the the hypernyms in the WordNet */
-    private static Digraph mGraph;
+    private final Digraph mGraph;
 
     /* Instance of wordnet BFS to reuse and avoid re-initialization costs*/
     private WordNetBFS mBfs;
@@ -79,6 +79,7 @@ public class SAP {
     }
 
     public static void main(String[] args){
+
         In in = new In("src/main/wordnet/digraph5.txt");
         Digraph g = new Digraph(in);
         SAP test = new SAP(g);
@@ -102,8 +103,8 @@ public class SAP {
         in = new In("src/main/wordnet/digraph9.txt");
         g = new Digraph(in);
         test = new SAP(g);
-        System.out.println(test.length(0,4));
-        System.out.println(test.ancestor(0,4));
+        System.out.println(test.length(2,5));
+        System.out.println(test.ancestor(2,5));
 
         System.out.println("");
 
@@ -112,8 +113,7 @@ public class SAP {
         test = new SAP(g);
         System.out.println(test.length(3,1));
         System.out.println(test.ancestor(3,1));
-
-        in = new In("src/main/wordnet/digraph3.txt");
+in = new In("src/main/wordnet/digraph3.txt");
         g = new Digraph(in);
         test = new SAP(g);
         System.out.println(test.length(2,6));
@@ -125,18 +125,26 @@ public class SAP {
         System.out.println(test.length(0,1));
         System.out.println(test.ancestor(0,1));
 
+
+        System.out.println("here");
+
         in = new In("src/main/wordnet/digraph6.txt");
         g = new Digraph(in);
         test = new SAP(g);
         System.out.println(test.length(5,0));
         System.out.println(test.ancestor(5,0));
 
-        in = new In("src/main/wordnet/digraph5.txt");
+        in = new In("src/main/wordnet/digraph9.txt");
         g = new Digraph(in);
         test = new SAP(g);
-        System.out.println(test.length(14,20));
-        System.out.println(test.ancestor(14,20));
+        System.out.println(test.length(6,5));
 
+         in = new In("src/main/java/4vertex40edge.txt");
+         g = new Digraph(in);
+        test = new SAP(g);
+        System.out.println(test.length(0, 9));
+
+        System.out.println("done");
     }
 
 }

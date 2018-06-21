@@ -10,8 +10,8 @@ public class WordNetBFS {
     /* tracks if vertex was discovered by to vertex (=1) or
         a from vertex (=-1)
      */
-    private HashMap<Integer, LinkedList<Integer>> multiMark;
-    private HashMap<Integer, LinkedList<Integer>> distTo;
+    private HashMap<Integer, ArrayList<Integer>> multiMark;
+    private HashMap<Integer, ArrayList<Integer>> distTo;
     private HashMap<Integer, Integer> edgeTo;
     private int commonAncestor;
     private int sap;
@@ -24,8 +24,8 @@ public class WordNetBFS {
     public WordNetBFS(Digraph g){
         this.g = g;
         changedIds = new Stack<Integer>();
-        multiMark = new HashMap<Integer, LinkedList<Integer>>();
-        distTo = new HashMap<Integer, LinkedList<Integer>>();
+        multiMark = new HashMap<Integer, ArrayList<Integer>>();
+        distTo = new HashMap<Integer, ArrayList<Integer>>();
         edgeTo = new HashMap<Integer, Integer>();
     }
 
@@ -63,30 +63,53 @@ public class WordNetBFS {
                 commonAncestor = s;
                 return;
             }
-            multiMark.put(s,s);
-            distTo.put(s, 0);
+            multiMark.put(s, new ArrayList<Integer>());
+            distTo.put(s, new ArrayList<Integer>());
+            multiMark.get(s).add(s);
+            distTo.get(s).add(0);
             changedIds.push(s);
             q.enqueue(s);
         }
         while(!q.isEmpty()){
            int v = q.dequeue();
+           if(sap != -1 && Collections.min(distTo.get(v)) >= sap) return;
            for (int w : g.adj(v)){
-               if(sap != -1 && distTo.get(v) > sap) return;
                if( !multiMark.containsKey(w)){
                    edgeTo.put(w, v);
-                   distTo.put(w, ((distTo.get(v)) +1));
-                   multiMark.put(w,multiMark.get(v));
+                   ArrayList<Integer> newDistance = addOneToDist(distTo.get(v));
+                   distTo.put(w, newDistance);
+                   multiMark.put(w, new ArrayList<Integer>(multiMark.get(v)));
 //                   System.out.println("distTo["+w+"] is " + distTo.get(w));
                    changedIds.push(w);
                    q.enqueue(w);
                }
                else{
-                   if(multiMark.get(w) != multiMark.get(v)){
-                       if(sap == -1 || (distTo(v) + distTo(w) +1) < sap) {
-                           commonAncestor = w;
-                           sap = distTo.get(v) + distTo.get(w) + 1; }
-                           multiMark.put(w, distTo.get(v) + 1);
-                           multiMark.put(w, multiMark.get(v));
+                   // only check if markers don't match
+                   if(!(multiMark.get(v).containsAll(multiMark.get(w))) ||
+                      !(multiMark.get(w).containsAll(multiMark.get(v)))) {
+                       // get initial sizes
+                       final int vSize = multiMark.get(v).size();
+                       final int wSize = multiMark.get(w).size();
+
+
+                       // iterate over v's mark list
+                       for (int i = 0; i < vSize; i++) {
+                           // for each element in v, iterate over w's list
+                           for (int j = 0; j < wSize; j++) {
+                               // if path is not a self cycle
+                               if (multiMark.get(v).get(i) != multiMark.get(w).get(j)) {
+                                   // update with new entries
+                                   multiMark.get(w).add(multiMark.get(v).get(i));
+                                   distTo.get(w).add(distTo.get(v).get(i) + 1);
+                                   // check if new path is shortest
+                                   int newDist = distTo.get(v).get(i) + distTo.get(w).get(j) + 1;
+                                   if (sap == -1 || newDist < sap) {
+                                       sap = newDist;
+                                       commonAncestor = w;
+                                   }
+                               }
+                           }
+                       }
                    }
                }
            }
@@ -102,20 +125,31 @@ public class WordNetBFS {
 
         while(!q.isEmpty()){
             int v = q.dequeue();
+            if(sap != -1 && Collections.min(distTo.get(v)) > sap) return;
             for (int w : g.adj(v)){
                 if( !multiMark.containsKey(w)){
                     edgeTo.put(w, v);
-                    distTo.put(w, distTo.get(v) + 1);
-                    multiMark.put(w, multiMark.get(v) == 1 ? 1 : -1);
+
+                    ArrayList<Integer> newDist = addOneToDist(distTo.get(v));
+                    distTo.put(w, newDist);
+
+                    ArrayList<Integer> newMark = new ArrayList<Integer>();
+                    if(multiMark.get(v).contains(1)){
+                        newMark.add(1);
+                    }
+                    if(multiMark.get(v).contains(-1)){
+                        newMark.add(-1);
+                    }
+                    multiMark.put(w, newMark);
                     changedIds.push(w);
                     q.enqueue(w);
                 }
                 else{
                     // if connecting a to path and a from path
-                    if((multiMark.get(w) == -1 && multiMark.get(v) == 1) ||
-                            multiMark.get(v) == -1 && multiMark.get(w) == 1) {
+                    if(((multiMark).get(w).contains(-1) && multiMark.get(v).contains(1)) ||
+                            multiMark.get(v).contains(-1) && multiMark.get(w).contains(1)) {
                         commonAncestor = w;
-                        sap = distTo.get(v) + distTo.get(w) + 1;
+                        sap = distTo.get(v).get(0) + distTo.get(w).get(0) + 1;
                         return;
                     }
                 }
@@ -138,8 +172,12 @@ public class WordNetBFS {
                     return;
                 }
                 q.enqueue(i);
-                multiMark.put(i, 1);
-                distTo.put(i, 0);
+                ArrayList<Integer> newMark = new ArrayList<Integer>();
+                newMark.add(1);
+                ArrayList<Integer> newDist = new ArrayList<Integer>();
+                newDist.add(0);
+                multiMark.put(i, newMark);
+                distTo.put(i, newDist);
                 changedIds.push(i);
             }
             if (it2.hasNext()) {
@@ -150,8 +188,12 @@ public class WordNetBFS {
                     return;
                 }
                 q.enqueue(i);
-                multiMark.put(i, -1);
-                distTo.put(i, 0);
+                ArrayList<Integer> newMarker = new ArrayList<Integer>();
+                ArrayList<Integer> newDist = new ArrayList<Integer>();
+                newMarker.add(-1);
+                newDist.add(0);
+                multiMark.put(i, newMarker);
+                distTo.put(i, newDist);
                 changedIds.push(i);
             }
         }
@@ -159,16 +201,23 @@ public class WordNetBFS {
 
     private void bfs(Digraph g, int s){
         Queue<Integer> q = new Queue<Integer>();
-        multiMark.put(s, 1);
-        distTo.put(s, 0);
+        ArrayList<Integer> newMarker = new ArrayList<Integer>();
+        ArrayList<Integer> newDist = new ArrayList<Integer>();
+        newMarker.add(1);
+        newDist.add(0);
+        multiMark.put(s, newMarker);
+        distTo.put(s, newDist);
         q.enqueue(s);
         while(!q.isEmpty()){
             int v = q.dequeue();
             for (int w :g.adj(v)){
                 if( !multiMark.containsKey(w)){
                     edgeTo.put(w, v);
-                    distTo.put(w, distTo.get(v) + 1);
-                    multiMark.put(w, 1);
+                    ArrayList<Integer> newDistance = addOneToDist(distTo.get(v));
+                    distTo.put(w, newDistance);
+                    ArrayList<Integer> newM = new ArrayList<Integer>();
+                    newM.add(1);
+                    multiMark.put(w, newM);
                     changedIds.push(w);
                     q.enqueue(w);
                 }
@@ -208,9 +257,32 @@ public class WordNetBFS {
         sap = -1;
     }
 
+    private ArrayList<Integer> addOneToDist(ArrayList<Integer> distTo){
+        ArrayList<Integer> copy =  new ArrayList<Integer>(distTo);
+        for( int i = 0; i < distTo.size(); i++){
+            int oldVal = distTo.get(i);
+            int newVal = oldVal +1;
+            copy.set(i, newVal);
+        }
+        return copy;
+    }
+
     public int distTo(int v) {
         validateVertex(v);
-        return distTo.get(v);
+        int minIndex = getMinIndex(distTo.get(v));
+        return distTo.get(v).get(minIndex);
+    }
+
+    private int getMinIndex(ArrayList<Integer> arr){
+        int min = Integer.MAX_VALUE;
+        int minIndex = -1;
+        for(int i = 0; i < arr.size(); i ++){
+            if ( arr.get(i) < min){
+                min = arr.get(i);
+                minIndex = i;
+            }
+        }
+        return minIndex;
     }
 
     public int getCommonAncestor() {

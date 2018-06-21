@@ -127,7 +127,7 @@ public class WordNet {
 
         sap = sap == null? new SAP(mHypernyms) : sap;
 
-        int caId = sap.length(mSynsetsNounsToIds.get(nounA), mSynsetsNounsToIds.get(nounB));
+        int caId = sap.length(mSynsetsNounsToIds.get(nounB), mSynsetsNounsToIds.get(nounA));
         if (caId != -1) return  mSynsetsIdsToNouns.get(caId);
         else            return null;
     }
